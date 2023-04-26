@@ -25,10 +25,49 @@ router.post("/create", (req, res, next) => {
 });
 router.get("/movie-details/:id", (req, res, next) => {
   Movie.findById(req.params.id)
-    .populate("cast")
+    .populate({
+      path: "cast",
+    })
     .then((movie) => {
-      console.log("get this movie", movie);
+    //   console.log("get this movie", movie);
+      res.render("movies/movie-details.hbs", movie);
     });
+});
+router.get("/delete/:id", (req, res, next) => {
+  Movie.findByIdAndDelete(req.params.id).then((deletedMovie) => {
+    // console.log("deleted movie: ", deletedMovie);
+    res.redirect("/movies");
+  });
+});
+router.get("/update/:id", (req, res, next) => {
+  Movie.findById(req.params.id)
+    .populate()
+    .then((movie) => {
+      Celebrity.find().then((celebrities) => {
+        let remainingCelebs = celebrities.filter(
+          (curr) => !movie.cast.includes(curr._id)
+        );
+        let starringCelebs = celebrities.filter((curr) =>
+          movie.cast.includes(curr._id)
+        );
+        res.render("movies/edit-movie", {
+          movie,
+          starringCelebs,
+          remainingCelebs,
+        });
+      });
+    });
+});
+router.post("/update/:id", (req, res, next) => {
+  Movie.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  })
+    .then((updatedMovie) => {
+    //   console.log("updated movie: ", updatedMovie);
+      res.redirect(`/movies/movie-details/${req.params.id}`);
+    })
+    .catch((err) => console.error(err));
 });
 
 module.exports = router;
